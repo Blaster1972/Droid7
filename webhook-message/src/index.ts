@@ -9,19 +9,20 @@ const reqBodySchema = sdk.z.object({
 })
 
 export default new bp.Integration({
-  register: async () => {
-    /**
-     * This is called when an integration configuration is saved.
-     * You should use this handler to instanciate ressources in the external service and ensure that the configuration is valid.
-     */
-    throw new sdk.RuntimeError('Invalid configuration') // replace this with your own validation logic
+  register: async (props) => {
+    //await initializeDatabase(); // Initialize database
+    const { ctx, logger } = props;
+    const { webhookUrl } = ctx.configuration;
+
+    try {
+      await axios.post(webhookUrl, { message: 'Registering Webhook' });
+    } catch (error) {
+      logger.forBot().error('Failed to register Webhook:', error);
+      throw new sdk.RuntimeError('Failed to register Webhook');
+    }
   },
   unregister: async () => {
-    /**
-     * This is called when a bot removes the integration.
-     * You should use this handler to instanciate ressources in the external service and ensure that the configuration is valid.
-     */
-    throw new sdk.RuntimeError('Invalid configuration') // replace this with your own validation logic
+    throw new sdk.RuntimeError('Invalid configuration');
   },
   actions: {},
   channels: {

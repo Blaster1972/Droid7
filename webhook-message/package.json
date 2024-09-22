@@ -6,6 +6,7 @@
     "check:type": "tsc --noEmit",
     "version": "bp --version",
     "login": "bp login",
+    "start": "nodemon --watch \"./*\" --ext \"ts\" --exec \"bp deploy -y\"",
     "gen": "bp gen",
     "deploy": "bp deploy"
   },
@@ -19,6 +20,7 @@
   "devDependencies": {
     "@botpress/cli": "^0.9.7",
     "@types/node": "^18.19.50",
+    "nodemon": "^3.1.7",
     "ts-node": "^10.9.2",
     "typescript": "^4.9.5"
   }
