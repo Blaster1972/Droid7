@@ -1,14 +1,8 @@
 import axios from 'axios';
 import { z } from 'zod';
-import * as dotenv from 'dotenv';
 
-// Load environment variables
-dotenv.config();
-
-const MIXITUP_BASE_URL = 'https://duckling-mighty-rhino.ngrok-free.app';
-const BOTPRESS_URL = 'https://api.botpress.cloud/v1/tables/UserTable/rows/upsert';
 const BOT_ID = '58b4e23e-6f7b-4f79-a937-6a10e6e67446'; // x-bot-id
-const BOTPRESS_TOKEN = 'bp_pat_aXhFebEAEV7QUXVriDsoMnokqLpdVJ0VROcN'; // Store your Botpress token in .env
+const BOTPRESS_TOKEN = 'bp_pat_aXhFebEAEV7QUXVriDsoMnokqLpdVJ0VROcN'; 
 
 // Define Zod schemas
 const PlatformDataSchema = z.object({
@@ -22,22 +16,22 @@ const PlatformDataSchema = z.object({
     RoleBadgeLink: z.string().nullable().optional(),
     SpecialtyBadgeLink: z.string().nullable().optional(),
     Roles: z.array(z.string()).nullable().optional(),
-    AccountDate: z.string().nullable().optional(), // Consider handling as a Date if needed
+    AccountDate: z.string().nullable().optional(),
     FollowDate: z.string().nullable().optional(),
     SubscribeDate: z.string().nullable().optional(),
     SubscriberTier: z.number().nullable().optional(),
-  }).nullable().optional(), // The Twitch object can be optional and nullable
+  }).nullable().optional(),
 });
 
 // Define the User Schema
 const UserSchema = z.object({
   mixitupUserId: z.string().nullable(),
-  userId: z.string().nullable(), // Ensure userId is included
+  userId: z.string().nullable(),
   notes: z.string().nullable(),
   customTitle: z.string().nullable(),
   lastUpdated: z.string().nullable(),
   lastActivity: z.string().nullable(),
-  platformData: PlatformDataSchema.nullable(), // Incorporate the platformData schema here
+  platformData: PlatformDataSchema.nullable(),
   currencyAmounts: z.record(z.string(), z.number()).nullable(),
   inventoryAmounts: z.record(z.string(), z.number()).nullable(),
   streamPassAmounts: z.record(z.string(), z.number()).nullable(),
@@ -45,12 +39,12 @@ const UserSchema = z.object({
   onlineViewingMinutes: z.number().nullable(),
 });
 
-export async function upsertUser(mixitupUserId: string) {
+export async function upsertUser(mixitupUserId: string, endpointUrl: string) {
     try {
         console.log(`Fetching user data for mixitupUserId: ${mixitupUserId}`);
 
         // Fetch user data from MixItUp
-        const response = await axios.get(`${MIXITUP_BASE_URL}/api/v2/users/${mixitupUserId}`);
+        const response = await axios.get(`${endpointUrl}/api/v2/users/${mixitupUserId}`);
         const userData = response.data;
 
         console.log('Fetched User Data:', userData);
@@ -58,7 +52,7 @@ export async function upsertUser(mixitupUserId: string) {
         // Map the user data to match the table schema
         const mappedUserData = {
             mixitupUserId: userData.User.ID,
-            userId: userData.User.ID, // Assuming you want to use mixitupUserId as userId
+            userId: userData.User.ID,
             lastActivity: userData.User.LastActivity,
             lastUpdated: userData.User.LastUpdated,
             onlineViewingMinutes: userData.User.OnlineViewingMinutes,
@@ -68,7 +62,7 @@ export async function upsertUser(mixitupUserId: string) {
             customTitle: userData.User.CustomTitle,
             isSpecialtyExcluded: userData.User.IsSpecialtyExcluded,
             notes: userData.User.Notes,
-            platformData: userData.User.PlatformData, // Keep original object
+            platformData: userData.User.PlatformData,
         };
 
         console.log('Mapped User Data:', JSON.stringify(mappedUserData, null, 2));
@@ -78,10 +72,10 @@ export async function upsertUser(mixitupUserId: string) {
 
         // Upsert to Botpress using the mappedUserData with mixitupUserId as key
         const upsertResponse = await axios.post(
-            BOTPRESS_URL,
+            'https://api.botpress.cloud/v1/tables/UserTable/rows/upsert',
             {
                 rows: [mappedUserData],
-                keyColumn: 'mixitupUserId',  // Set this to use mixitupUserId as the key
+                keyColumn: 'mixitupUserId',
             },
             {
                 headers: {
@@ -96,7 +90,7 @@ export async function upsertUser(mixitupUserId: string) {
 
         // Return a structured response
         return { success: true, data: mappedUserData };
-        } catch (error: unknown) {
+    } catch (error: unknown) {
         if (error instanceof z.ZodError) {
             console.error('Validation Error:', error.errors);
             return { success: false, message: 'Validation error occurred', details: error.errors };

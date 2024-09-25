@@ -1,4 +1,4 @@
-import { UserApi, Configuration } from '../mixitup-client';  // Adjust the path if needed
+import { UserApi, Configuration } from '../../mixitup-client';  // Adjust the path if needed
 
 // Set up the configuration for the API client
 const config = new Configuration({
