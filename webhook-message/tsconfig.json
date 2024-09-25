@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "lib": ["es2022"],
-    "module": "commonjs",
+    "module": "CommonJS", // or "es2022", "system", "node16", "nodenext", "preserve"
+    "target": "es2020", // or higher
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -14,7 +15,6 @@
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
     "noUnusedParameters": true,
-    "target": "es2017",
     "baseUrl": ".",
     "outDir": "dist",
     "checkJs": false,

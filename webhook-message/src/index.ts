@@ -1,123 +1,138 @@
-import * as sdk from '@botpress/sdk'
-import axios from 'axios'
-import * as bp from '.botpress'
+import * as sdk from '@botpress/sdk';
+import * as bp from '.botpress';
+import axios from 'axios';
+import { sendMessageToMixitup } from './messageHandler';
+import { upsertUser } from './upsertUser'; // Keep it simple
 
 const reqBodySchema = sdk.z.object({
   userId: sdk.z.string(),
   conversationId: sdk.z.string(),
   text: sdk.z.string(),
-})
+});
 
 export default new bp.Integration({
-  register: async (props) => {
-    //await initializeDatabase(); // Initialize database
-    const { ctx, logger } = props;
-    const { webhookUrl } = ctx.configuration;
-
+  register: async ({ ctx, logger }) => {
+    const { webhookUrl, endpointUrl } = ctx.configuration;
     try {
-      await axios.post(webhookUrl, { message: 'Registering Webhook' });
+      await axios.post(webhookUrl, { text: 'Sending test message to Mixitup webhook' });
+      const statusResponseEndpoint = await axios.get(`${endpointUrl}/api/v2/status/version`);
+      if (statusResponseEndpoint.status === 200) {
+        logger.forBot().info('Mixitup registered successfully.');
+      } else {
+        throw new sdk.RuntimeError('Mixitup endpoint URL is not responsive');
+      }
     } catch (error) {
-      logger.forBot().error('Failed to register Webhook:', error);
-      throw new sdk.RuntimeError('Failed to register Webhook');
+      logger.forBot().error('Failed to register:', error);
+      throw new sdk.RuntimeError('Failed to register');
     }
   },
+
   unregister: async () => {
-    throw new sdk.RuntimeError('Invalid configuration');
+    console.log('Unregistering integration');
   },
+
   actions: {},
+
   channels: {
     webhook: {
       messages: {
         text: async (props) => {
-          /**
-           * This is the outgoing message handler. It is called when a bot sends a message to the user.
-           */
-          const {
-            ctx: {
-              configuration: { webhookUrl },
-            },
-            conversation: { id: conversationId },
-            user: { id: userId },
-            payload: { text },
-          } = props
-
-          const requestBody = {
-            userId,
-            conversationId,
-            text,
-          }
-
-          await axios.post(webhookUrl, requestBody)
+          const { conversation, user, payload, ctx } = props;
+          const requestBody = { userId: user.id, conversationId: conversation.id, text: payload.text };
+          await sendMessageToMixitup(ctx.configuration.webhookUrl, requestBody);
+        },
+      },
+    },
+    endpoint: {
+      messages: {
+        text: async ({ payload, ctx, conversation, ack }) => {
+          const tags = conversation.tags as Partial<Record<'id' | 'mixitupUserId', string>>;
+          const mixitupUserId = tags.mixitupUserId;
+          const requestBody = { userId: mixitupUserId, conversationId: conversation.id, text: payload.text };
+          const messageResponse = await axios.post(`${ctx.configuration.endpointUrl}/messages`, requestBody);
+          await ack({ tags: { id: messageResponse.data.message_id } });
         },
       },
     },
   },
+
   handler: async (props) => {
-    /**
-     * This is the incoming request handler. It is called by the external service you are integrating with.
-     */
     const {
-      client,
-      req: { body },
-    } = props
+        client,
+        req,
+    } = props;
 
-    if (!body) {
-      return {
-        status: 400,
-        body: JSON.stringify({ error: 'No body' }),
-      }
-    }
-
-    let parsedBody: unknown
+    // Handle incoming request
     try {
-      parsedBody = JSON.parse(body)
-    } catch (thrown) {
-      return {
-        status: 400,
-        body: JSON.stringify({ error: 'Invalid JSON Body' }),
-      }
+        if (req.path === "/addUser" && req.method === "POST") {
+            const data = JSON.parse(req.body || '{}');
+            const { mixitupUserId, conversationId } = data;
+
+            // Validate required fields
+            if (!mixitupUserId || !conversationId) {
+                return { status: 400, body: JSON.stringify({ error: "Missing required fields" }) };
+            }
+
+            // Call upsertUser and return response
+            const upsertResponse = await upsertUser(mixitupUserId);
+            return {
+                status: upsertResponse.success ? 200 : 500,
+                body: JSON.stringify(upsertResponse),
+            };
+        }
+
+        // Existing conversation handling logic
+        let parsedBody;
+        try {
+            parsedBody = JSON.parse(req.body || '{}');
+        } catch (thrown) {
+            return {
+                status: 400,
+                body: JSON.stringify({ error: 'Invalid JSON Body' }),
+            };
+        }
+
+        const parseResult = reqBodySchema.safeParse(parsedBody);
+        if (!parseResult.success) {
+            return {
+                status: 400,
+                body: JSON.stringify({ error: 'Invalid body' }),
+            };
+        }
+
+        const { userId, conversationId, text } = parseResult.data;
+
+        // Handle conversation creation
+        const { conversation } = await client.getOrCreateConversation({
+            channel: 'webhook',
+            tags: {
+                id: conversationId,
+            },
+        });
+
+        const { user } = await client.getOrCreateUser({
+            tags: {
+                id: userId,
+            },
+        });
+
+        const { message } = await client.createMessage({
+            type: 'text',
+            conversationId: conversation.id,
+            userId: user.id,
+            payload: {
+                text,
+            },
+            tags: {},
+        });
+
+        return {
+            status: 200,
+            body: JSON.stringify({ message }),
+        };
+    } catch (error) {
+        console.error('Error in handler:', error);
+        return { status: 500, body: JSON.stringify({ error: 'Internal Server Error' }) };
     }
-
-    const parseResult = reqBodySchema.safeParse(parsedBody)
-    if (!parseResult.success) {
-      return {
-        status: 400,
-        body: JSON.stringify({ error: 'Invalid body' }),
-      }
-    }
-
-    const { userId, conversationId, text } = parseResult.data
-
-    const { conversation } = await client.getOrCreateConversation({
-      channel: 'webhook',
-      tags: {
-        id: conversationId,
-      },
-    })
-
-    const { user } = await client.getOrCreateUser({
-      tags: {
-        id: userId,
-      },
-    })
-
-    const { message } = await client.createMessage({
-      type: 'text',
-      conversationId: conversation.id,
-      userId: user.id,
-      payload: {
-        text,
-      },
-      tags: {},
-    })
-
-    const response = {
-      message,
-    }
-
-    return {
-      status: 200,
-      body: JSON.stringify(response),
-    }
-  },
-})
+},
+});
