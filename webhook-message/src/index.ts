@@ -1,8 +1,9 @@
 import * as sdk from '@botpress/sdk';
 import * as bp from '.botpress';
 import axios from 'axios';
-import { sendMessageToMixitup } from './messageHandler';
+import { sendMessageToWebhook, sendMessageToEndpoint } from './messageHandler';
 import { upsertUser } from './upsertUser'; 
+import { Payload } from './types'; // Adjust the path as necessary
 
 const reqBodySchema = sdk.z.object({
   userId: sdk.z.string(),
@@ -16,10 +17,9 @@ export default new bp.Integration({
     try {
       await axios.post(webhookUrl, { text: 'Sending test message to Mixitup webhook' });
       const statusResponseEndpoint = await axios.get(`${endpointUrl}/api/v2/status/version`);
-
+      
       if (statusResponseEndpoint.status === 200) {
         logger.forBot().info('Mixitup registered successfully.');
-        
       } else {
         throw new sdk.RuntimeError('Mixitup endpoint URL is not responsive');
       }
@@ -38,24 +38,38 @@ export default new bp.Integration({
   channels: {
     webhook: {
       messages: {
-        text: async (props) => {
-          const { conversation, user, payload, ctx } = props;
-          const requestBody = { userId: user.id, conversationId: conversation.id, text: payload.text };
-          await sendMessageToMixitup(ctx.configuration.webhookUrl, requestBody);
-        },
+          text: async (props) => {
+              const { conversation, user, payload, ctx } = props;
+              const requestBody: Payload = {
+                  type: 'text',
+                  text: payload.text,
+              };
+              await sendMessageToWebhook(ctx.configuration.webhookUrl, requestBody);
+          },
       },
-    },
-    endpoint: {
-      messages: {
-        text: async ({ payload, ctx, conversation, ack }) => {
-          const tags = conversation.tags as Partial<Record<'id' | 'mixitupUserId', string>>;
-          const mixitupUserId = tags.mixitupUserId;
-          const requestBody = { userId: mixitupUserId, conversationId: conversation.id, text: payload.text };
-          const messageResponse = await axios.post(`${ctx.configuration.endpointUrl}/messages`, requestBody);
-          await ack({ tags: { id: messageResponse.data.message_id } });
+  },
+  endpoint: {
+    messages: {
+        text: async ({ payload, conversation, ack }) => {
+            const tags = conversation.tags as Partial<Record<'id' | 'mixitupUserId', string>>;
+            const mixitupUserId = tags.mixitupUserId;
+
+            // Create the payload
+            const chatMessage: Payload = {
+                type: 'text',
+                text: payload.text,
+            };
+
+            // Send the message and get the response
+            const messageResponse = await sendMessageToEndpoint(chatMessage);
+
+            // Call ack with the message ID
+            await ack({
+                tags: { id: messageResponse.message_id } // Assuming message_id is returned
+            });
         },
-      },
     },
+},
   },
 
   handler: async (props) => {
@@ -107,7 +121,7 @@ export default new bp.Integration({
 
       // Handle conversation creation
       const { conversation } = await client.getOrCreateConversation({
-        channel: 'webhook',
+        channel: 'endpoint',
         tags: {
           id: conversationId,
         },
