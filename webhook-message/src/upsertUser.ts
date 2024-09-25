@@ -5,7 +5,7 @@ import * as dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
-const MIXITUP_BASE_URL = process.env.MIXITUP_BASE_URL;
+const MIXITUP_BASE_URL = 'https://duckling-mighty-rhino.ngrok-free.app';
 const BOTPRESS_URL = 'https://api.botpress.cloud/v1/tables/UserTable/rows/upsert';
 const BOT_ID = '58b4e23e-6f7b-4f79-a937-6a10e6e67446'; // x-bot-id
 const BOTPRESS_TOKEN = 'bp_pat_aXhFebEAEV7QUXVriDsoMnokqLpdVJ0VROcN'; // Store your Botpress token in .env

@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "lib": ["es2022"],
-    "module": "CommonJS", // or "es2022", "system", "node16", "nodenext", "preserve"
-    "target": "es2020", // or higher
+    "module": "commonjs",
+    "target": "es2022",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -11,18 +11,19 @@
     "allowUnusedLabels": false,
     "allowUnreachableCode": false,
     "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
     "noUnusedParameters": true,
-    "baseUrl": ".",
-    "outDir": "dist",
-    "checkJs": false,
-    "incremental": true,
     "exactOptionalPropertyTypes": false,
     "resolveJsonModule": true,
     "noPropertyAccessFromIndexSignature": false,
-    "noUnusedLocals": false
+    "noUnusedLocals": false,
+    "noImplicitOverride": false,
+    "checkJs": false,
+    "baseUrl": ".",
+    "outDir": "dist",
+    "incremental": true,
   },
-  "include": [".botpress/**/*", "src/**/*", "./*.ts", "./*.json"]
+  "include": [".botpress/**/*", "src/**/*", "./*.ts", "./*.json", "./mixitup-client/**/*"],  
+  "exclude": ["node_modules"]
 }

@@ -2,7 +2,7 @@ import * as sdk from '@botpress/sdk';
 import * as bp from '.botpress';
 import axios from 'axios';
 import { sendMessageToMixitup } from './messageHandler';
-import { upsertUser } from './upsertUser'; // Keep it simple
+import { upsertUser } from './upsertUser'; 
 
 const reqBodySchema = sdk.z.object({
   userId: sdk.z.string(),
