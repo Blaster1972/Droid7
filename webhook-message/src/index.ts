@@ -54,19 +54,10 @@ export default new bp.Integration({
             const tags = conversation.tags as Partial<Record<'id' | 'mixitupUserId', string>>;
             const mixitupUserId = tags.mixitupUserId;
 
-            // Create the payload
-            const chatMessage: Payload = {
-                type: 'text',
-                text: payload.text,
-            };
-
-            // Send the message and get the response
-            const messageResponse = await sendMessageToEndpoint(chatMessage);
-
-            // Call ack with the message ID
-            await ack({
-                tags: { id: messageResponse.message_id } // Assuming message_id is returned
-            });
+            // Call the new sendMessageToEndpoint function
+            await sendMessageToEndpoint(payload.text, 'Twitch', false); // Adjust platform and sendAsStreamer as needed
+            
+            await ack({ tags: { id: mixitupUserId } }); // You may want to handle message ID differently if needed
         },
     },
 },
@@ -121,7 +112,7 @@ export default new bp.Integration({
 
       // Handle conversation creation
       const { conversation } = await client.getOrCreateConversation({
-        channel: 'endpoint',
+        channel: 'webhook',
         tags: {
           id: conversationId,
         },
