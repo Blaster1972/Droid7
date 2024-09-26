@@ -38,15 +38,84 @@ export default new bp.Integration({
   channels: {
     webhook: {
       messages: {
-          text: async (props) => {
-              const { conversation, user, payload, ctx } = props;
-              const requestBody: Payload = {
-                  type: 'text',
-                  text: payload.text,
-              };
-              await sendMessageToWebhook(ctx.configuration.webhookUrl, requestBody);
-          },
-      },
+        text: async (props) => {
+            const { payload, ctx } = props;
+            const requestBody: Payload = {
+                type: 'text',
+                text: payload.text,
+            };
+            await sendMessageToWebhook(ctx.configuration.webhookUrl, requestBody);
+        },
+        image: async (props) => {
+            const { payload, ctx } = props;
+            const requestBody: Payload = {
+                type: 'image',
+                title: payload.title,
+                imageUrl: payload.imageUrl,
+            };
+            await sendMessageToWebhook(ctx.configuration.webhookUrl, requestBody);
+        },
+        audio: async (props) => {
+            const { payload, ctx } = props;
+            const requestBody: Payload = {
+                type: 'audio',
+                audioUrl: payload.audioUrl,
+            };
+            await sendMessageToWebhook(ctx.configuration.webhookUrl, requestBody);
+        },
+        video: async (props) => {
+            const { payload, ctx } = props;
+            const requestBody: Payload = {
+                type: 'video',
+                title: payload.title,
+                videoUrl: payload.videoUrl,
+            };
+            await sendMessageToWebhook(ctx.configuration.webhookUrl, requestBody);
+        },
+        file: async (props) => {
+            const { payload, ctx } = props;
+            const requestBody: Payload = {
+                type: 'file',
+                title: payload.title,
+                fileUrl: payload.fileUrl,
+            };
+            await sendMessageToWebhook(ctx.configuration.webhookUrl, requestBody);
+        },
+        card: async (props) => {
+            const { payload, ctx } = props;
+            const requestBody: Payload = {
+                type: 'card',
+                title: payload.title,
+                subtitle: payload.subtitle,
+                imageUrl: payload.imageUrl,
+                actions: payload.actions,
+            };
+            await sendMessageToWebhook(ctx.configuration.webhookUrl, requestBody);
+        },
+        carousel: async (props) => {
+    const { payload, ctx } = props;
+    const requestBody: Payload = {
+        type: 'carousel',
+        cards: payload.cards.map((card) => ({
+            type: 'card', // Add the required type field
+            title: card.title,
+            subtitle: card.subtitle, // Optional
+            imageUrl: card.imageUrl, // Optional
+            actions: card.actions, // Ensure actions array is properly structured
+        })),
+    };
+    await sendMessageToWebhook(ctx.configuration.webhookUrl, requestBody);
+},
+        location: async (props) => {
+            const { payload, ctx } = props;
+            const requestBody: Payload = {
+                type: 'location',
+                latitude: payload.latitude,
+                longitude: payload.longitude,
+            };
+            await sendMessageToWebhook(ctx.configuration.webhookUrl, requestBody);
+        },
+    },
   },
   endpoint: {
     messages: {
