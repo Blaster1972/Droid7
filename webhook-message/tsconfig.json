@@ -23,7 +23,8 @@
     "baseUrl": ".",
     "outDir": "dist",
     "incremental": true,
+    "typeRoots": ["./node_modules/@types", "./types"]
   },
-  "include": [".botpress/**/*", "src/**/*", "./*.ts", "./*.json", "./mixitup-client/**/*"],  
+  "include": [".botpress/**/*", "src/**/*", "./*.ts", "./*.json", "./mixitup-client/**/*", "src/hooks/hooks.ts", "tests"],  
   "exclude": ["node_modules"]
 }

@@ -1,9 +1,14 @@
-import { z, IntegrationDefinition, messages } from '@botpress/sdk'
+import { z, IntegrationDefinition, InterfaceDeclaration,messages, interfaces } from '@botpress/sdk'
 import { integrationName } from './package.json'
-import { CardPayloadSchema } from 'src/types'
+import { ModelRefSchema } from 'src/interfaces/llmIntegrationSchemas';
+import { 
+  GenerateContentInputSchema,
+  GenerateContentInputBaseSchema,
+  GenerateContentOutputSchema,
+  ModelSchema
+ } from 'src/interfaces/llmIntegrationSchemas';
 
-// Constructor that accepts an object with a bunch of properties that will be sent to botpress
-// when deploying the integration.  Press ctrl + space for intellisense of what can be defined.
+// Constructor
 export default new IntegrationDefinition({
   name: integrationName,
   version: '0.0.1',
@@ -15,6 +20,11 @@ export default new IntegrationDefinition({
       endpointUrl: z.string().describe('The Mixitup endpoint url to post the bot answers to.')
     }),
   },
+  entities: {
+    modelRef: {
+      schema: ModelRefSchema,
+    },
+  },  
   channels: {
     webhook: {
       // messages: messages.defaults,  // use this to support all message types supported in Botpress Studio
@@ -118,13 +128,15 @@ export default new IntegrationDefinition({
       id: {}, // Add this line to tag users
     },
   },
-  actions: {},
-  events: {
-    incommingUser: {
-      schema: z.object({
-        mixitupUserId: z.string().describe('The Mixitup user ID to be upserted.'),
-        conversationId: z.string().describe('ID of the conversation related to the user.'),
-      }),
-    },
+events: {
+  incomingUser: {
+    schema: z.object({
+      mixitupUserId: z.string().describe('The Mixitup user ID to be upserted.'),
+      conversationId: z.string().describe('ID of the conversation related to the user.'),
+    }),
   },
-})
+},
+  
+}).extend(interfaces.llm, ({ modelRef }) => ({
+  modelRef,
+}));
