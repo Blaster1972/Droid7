@@ -2,26 +2,24 @@ import axios from 'axios';
 import { z } from 'zod';
 
 const BOT_ID = '58b4e23e-6f7b-4f79-a937-6a10e6e67446'; // x-bot-id
-const BOTPRESS_TOKEN = 'bp_pat_aXhFebEAEV7QUXVriDsoMnokqLpdVJ0VROcN'; 
+const BOTPRESS_TOKEN = 'bp_pat_aXhFebEAEV7QUXVriDsoMnokqLpdVJ0VROcN';
 
 // Define Zod schemas
 const PlatformDataSchema = z.object({
-  Twitch: z.object({
-    Platform: z.string().nullable().optional(),
-    ID: z.string().nullable().optional(),
-    Username: z.string().nullable().optional(),
-    DisplayName: z.string().nullable().optional(),
-    AvatarLink: z.string().nullable().optional(),
-    SubscriberBadgeLink: z.string().nullable().optional(),
-    RoleBadgeLink: z.string().nullable().optional(),
-    SpecialtyBadgeLink: z.string().nullable().optional(),
-    Roles: z.array(z.string()).nullable().optional(),
-    AccountDate: z.string().nullable().optional(),
-    FollowDate: z.string().nullable().optional(),
-    SubscribeDate: z.string().nullable().optional(),
-    SubscriberTier: z.number().nullable().optional(),
-  }).nullable().optional(),
-});
+  Platform: z.string().nullable().optional(),
+  ID: z.string().nullable().optional(),
+  Username: z.string().nullable().optional(),
+  DisplayName: z.string().nullable().optional(),
+  AvatarLink: z.string().nullable().optional(),
+  SubscriberBadgeLink: z.string().nullable().optional(),
+  RoleBadgeLink: z.string().nullable().optional(),
+  SpecialtyBadgeLink: z.string().nullable().optional(),
+  Roles: z.array(z.string()).nullable().optional(),
+  AccountDate: z.string().nullable().optional(),
+  FollowDate: z.string().nullable().optional(),
+  SubscribeDate: z.string().nullable().optional(),
+  SubscriberTier: z.number().nullable().optional(),
+}).nullable().optional();
 
 // Define the User Schema
 const UserSchema = z.object({
@@ -37,6 +35,14 @@ const UserSchema = z.object({
   streamPassAmounts: z.record(z.string(), z.number()).nullable(),
   isSpecialtyExcluded: z.boolean().nullable(),
   onlineViewingMinutes: z.number().nullable(),
+  platform: z.string().nullable(),
+  username: z.string().nullable(),
+  displayName: z.string().nullable(),
+  avatarLink: z.string().nullable(),
+  accountDate: z.string().nullable(),
+  followDate: z.string().nullable(),
+  subscribeDate: z.string().nullable(),
+  subscriberTier: z.number().nullable(),
 });
 
 export async function upsertUser(mixitupUserId: string, endpointUrl: string) {
@@ -49,12 +55,17 @@ export async function upsertUser(mixitupUserId: string, endpointUrl: string) {
 
         console.log('Fetched User Data:', userData);
 
+        // Extract the first platform data
+        const platformKeys = Object.keys(userData.User.PlatformData || {});
+        const firstPlatformKey = platformKeys.length > 0 ? platformKeys[0] : null;
+        const firstPlatformData = firstPlatformKey ? userData.User.PlatformData[firstPlatformKey] : null;
+
         // Map the user data to match the table schema
         const mappedUserData = {
             mixitupUserId: userData.User.ID,
             userId: userData.User.ID,
-            lastActivity: userData.User.LastActivity,
-            lastUpdated: userData.User.LastUpdated,
+            lastActivity: userData.User.LastActivity ? new Date(userData.User.LastActivity).toISOString() : null,
+            lastUpdated: userData.User.LastUpdated ? new Date(userData.User.LastUpdated).toISOString() : null,
             onlineViewingMinutes: userData.User.OnlineViewingMinutes,
             currencyAmounts: userData.User.CurrencyAmounts,
             inventoryAmounts: userData.User.InventoryAmounts,
@@ -62,7 +73,17 @@ export async function upsertUser(mixitupUserId: string, endpointUrl: string) {
             customTitle: userData.User.CustomTitle,
             isSpecialtyExcluded: userData.User.IsSpecialtyExcluded,
             notes: userData.User.Notes,
-            platformData: userData.User.PlatformData,
+            platformData: firstPlatformData, // Include first platform data here
+
+            // Initialize additional fields to null
+            platform: firstPlatformData?.Platform || null,
+            username: firstPlatformData?.Username || null,
+            displayName: firstPlatformData?.DisplayName || null,
+            avatarLink: firstPlatformData?.AvatarLink || null,
+            accountDate: firstPlatformData?.AccountDate || null,
+            followDate: firstPlatformData?.FollowDate || null,
+            subscribeDate: firstPlatformData?.SubscribeDate || null,
+            subscriberTier: firstPlatformData?.SubscriberTier || null,
         };
 
         console.log('Mapped User Data:', JSON.stringify(mappedUserData, null, 2));

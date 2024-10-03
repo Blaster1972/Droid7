@@ -1,12 +1,6 @@
 import { z, IntegrationDefinition, InterfaceDeclaration,messages, interfaces } from '@botpress/sdk'
 import { integrationName } from './package.json'
 import { ModelRefSchema } from 'src/interfaces/llmIntegrationSchemas';
-import { 
-  GenerateContentInputSchema,
-  GenerateContentInputBaseSchema,
-  GenerateContentOutputSchema,
-  ModelSchema
- } from 'src/interfaces/llmIntegrationSchemas';
 
 // Constructor
 export default new IntegrationDefinition({

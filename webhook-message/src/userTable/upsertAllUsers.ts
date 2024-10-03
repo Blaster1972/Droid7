@@ -8,7 +8,6 @@ const BOTPRESS_URL = 'https://api.botpress.cloud/v1/tables/UserTable/rows/upsert
 const BOT_ID = '58b4e23e-6f7b-4f79-a937-6a10e6e67446'; // x-bot-id
 const BOTPRESS_TOKEN = 'bp_pat_aXhFebEAEV7QUXVriDsoMnokqLpdVJ0VROcN'; 
 
-
 // Define the User type based on the expected API response structure
 interface User {
   ID: string;
@@ -22,6 +21,10 @@ interface User {
   IsSpecialtyExcluded: boolean | null; 
   Notes: string | null; 
   PlatformData: any | null; 
+  // Add the new Twitch properties
+  twitchUsername?: string | null; // Optional to allow for undefined
+  twitchDisplayName?: string | null; // Optional to allow for undefined
+  twitchAvatarLink?: string | null; // Optional to allow for undefined
 }
 
 // Define Zod schemas
@@ -51,7 +54,10 @@ const UserSchema = z.object({
   customTitle: z.string().nullable(),
   lastUpdated: z.string().nullable(),
   lastActivity: z.string().nullable(),
-  platformData: PlatformDataSchema.nullable(),
+  // New Twitch properties
+  twitchUsername: z.string().nullable().optional(),
+  twitchDisplayName: z.string().nullable().optional(),
+  twitchAvatarLink: z.string().nullable().optional(),
   currencyAmounts: z.record(z.string(), z.number()).nullable(),
   inventoryAmounts: z.record(z.string(), z.number()).nullable(),
   streamPassAmounts: z.record(z.string(), z.number()).nullable(),
@@ -79,8 +85,8 @@ async function upsertAllUsers() {
       const mappedUserData = {
         mixitupUserId: user.ID,
         userId: user.ID,
-        lastActivity: user.LastActivity ? new Date(user.LastActivity).toISOString() : null, // Convert Date to ISO string
-        lastUpdated: user.LastUpdated ? new Date(user.LastUpdated).toISOString() : null,     // Convert Date to ISO string
+        lastActivity: user.LastActivity ? new Date(user.LastActivity).toISOString() : null,
+        lastUpdated: user.LastUpdated ? new Date(user.LastUpdated).toISOString() : null,
         onlineViewingMinutes: user.OnlineViewingMinutes,
         currencyAmounts: user.CurrencyAmounts,
         inventoryAmounts: user.InventoryAmounts,
@@ -88,8 +94,19 @@ async function upsertAllUsers() {
         customTitle: user.CustomTitle,
         isSpecialtyExcluded: user.IsSpecialtyExcluded,
         notes: user.Notes,
-        platformData: user.PlatformData,
+        // Initialize new Twitch properties to null
+        twitchUsername: null,
+        twitchDisplayName: null,
+        twitchAvatarLink: null,
       };
+
+      // Extract and flatten Twitch-specific data
+      if (user.PlatformData && user.PlatformData.Twitch) {
+        const twitchData = user.PlatformData.Twitch;
+        mappedUserData.twitchUsername = twitchData.Username || null;
+        mappedUserData.twitchDisplayName = twitchData.DisplayName || null;
+        mappedUserData.twitchAvatarLink = twitchData.AvatarLink || null;
+      }
 
       // Validate the mapped user data against UserSchema
       UserSchema.parse(mappedUserData); 

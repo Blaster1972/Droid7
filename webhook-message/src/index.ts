@@ -21,7 +21,7 @@ export namespace llm {
 }
 
 // Instantiate MyLLMClient and set the Flask endpoint
-const flaskEndpoint = 'https://f811-74-12-36-160.ngrok-free.app/generate';
+const flaskEndpoint = 'https://duckling-mighty-rhino.ngrok-free.app/llm/generate';
 const myLLM = new MyLLMClient(flaskEndpoint);
 
 

@@ -3,7 +3,7 @@ import { MixItUpChatMessage, Configuration, UserApi } from '../mixitup-client'; 
 
 // Set up the configuration for the API client
 const config = new Configuration({
-    basePath: 'https://duckling-mighty-rhino.ngrok-free.app/api/v2', // Replace with your API base path
+    basePath: 'https://duckling-mighty-rhino.ngrok-free.app/mixitup/api/v2', // Replace with your API base path
 });
 
 // Instantiate the UserApi
