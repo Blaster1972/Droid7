@@ -6,3 +6,6 @@ dist/
 .venv/
 tests/
 models/
+*.pyc
+__pycache__/
+
