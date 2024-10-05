@@ -2,12 +2,12 @@ import axios, { AxiosError } from 'axios';
 import { MixItUpChatMessage, Configuration, UserApi } from '../mixitup-client'; // Adjust the import path if needed
 
 // Set up the configuration for the API client
-const config = new Configuration({
-    basePath: 'https://duckling-mighty-rhino.ngrok-free.app/mixitup/api/v2', // Replace with your API base path
-});
+//const config = new Configuration({
+    //basePath: 'https://duckling-mighty-rhino.ngrok-free.app/mixitup/api/v2', // Replace with your API base path
+//});
 
 // Instantiate the UserApi
-const userApi = new UserApi(config);
+//const userApi = new UserApi(config);
 
 /**
  * Sends the message to Mixitup webhook.
@@ -34,7 +34,8 @@ export async function sendMessageToWebhook(webhookUrl: string, requestBody: obje
  * @param {boolean} sendAsStreamer - True will force the message to send as the streamer
  * @returns {Promise<void>}
  */
-export async function sendMessageToEndpoint(message: string, platform: string = 'Twitch', sendAsStreamer: boolean = false): Promise<void> {
+export async function sendMessageToEndpoint(ctx: any, message: string, platform: string = 'Twitch', sendAsStreamer: boolean = false): Promise<void> {
+    const endpointUrl = ctx.configuration.endpointUrl; // Extract endpointUrl from ctx
     const chatMessage: MixItUpChatMessage = {
         Message: message,
         Platform: platform,
@@ -42,7 +43,7 @@ export async function sendMessageToEndpoint(message: string, platform: string = 
     };
 
     try {
-        const response = await axios.post(`${config.basePath}/chat/message`, chatMessage, {
+        const response = await axios.post(`${endpointUrl}/mixitup/api/v2/chat/message`, chatMessage, {
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -50,10 +51,8 @@ export async function sendMessageToEndpoint(message: string, platform: string = 
 
         console.log('Message sent to Mixitup endpoint successfully:', response.data);
     } catch (error) {
-        // Use type assertion to specify the error as AxiosError
         const axiosError = error as AxiosError;
 
-        // Log the error based on whether it has a response
         if (axiosError.response) {
             console.error('Error sending message to Mixitup endpoint:', axiosError.response.data);
         } else {

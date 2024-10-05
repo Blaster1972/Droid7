@@ -25,6 +25,6 @@
     "incremental": true,
     "typeRoots": ["./node_modules/@types", "./types"]
   },
-  "include": [".botpress/**/*", "src/**/*", "./*.ts", "./*.json", "./mixitup-client/**/*", "src/hooks/hooks.ts", "tests"],  
+  "include": [".botpress/**/*", "src/**/*", "./*.ts", "./*.json", "./mixitup-client/**/*", "src/hooks/hooks.ts", "tests", "botpress.d.ts"],  
   "exclude": ["node_modules"]
 }

@@ -13,6 +13,17 @@ import {
 } from './interfaces/llmIntegrationSchemas';
 import { MyLLMClient } from 'my-llm-client';
 
+
+let myLLMClientInstance: MyLLMClient | null = null; // Declare a variable to hold the singleton instance
+
+// Function to get the LLM client
+export const getLLMClient = (endpointUrl: string): MyLLMClient => {
+  if (!myLLMClientInstance) {
+    myLLMClientInstance = new MyLLMClient(endpointUrl); // Create a new instance if it doesn't exist
+  }
+  return myLLMClientInstance; // Return the singleton instance
+};
+
 // Define the llm namespace with necessary types
 export namespace llm {
   export type GenerateContentInput = z.infer<typeof GenerateContentInputBaseSchema>;
@@ -21,8 +32,10 @@ export namespace llm {
 }
 
 // Instantiate MyLLMClient and set the Flask endpoint
-const flaskEndpoint = 'https://duckling-mighty-rhino.ngrok-free.app/llm/generate';
-const myLLM = new MyLLMClient(flaskEndpoint);
+//const flaskEndpoint = 'https://duckling-mighty-rhino.ngrok-free.app/llm/generate';
+//const flaskEndpoint = 'http://mixitup-endpoint.ddns.net/llm/generate';
+//const myLLM = new MyLLMClient(flaskEndpoint);
+
 
 
 const reqBodySchema = sdk.z.object({
@@ -34,10 +47,14 @@ const reqBodySchema = sdk.z.object({
 export default new bp.Integration({
   register: async ({ ctx, logger }) => {
     const { webhookUrl, endpointUrl } = ctx.configuration;
+
+    // Instantiate the LLM client with the endpoint URL from the ctx configuration
+    const myLLM = getLLMClient(endpointUrl); // Use the singleton function to get the LLM client
+
     try {
-      await axios.post(webhookUrl, {text: "Testing Webhook"});
-      const statusResponseEndpoint = await axios.get(`${endpointUrl}/api/v2/status/version`);
-      
+      await axios.post(webhookUrl, { text: "Testing Webhook" });
+      const statusResponseEndpoint = await axios.get(`${endpointUrl}/mixitup/api/v2/status/version`);
+
       if (statusResponseEndpoint.status === 200) {
         logger.forBot().info('Mixitup registered successfully.');
       } else {
@@ -54,43 +71,51 @@ export default new bp.Integration({
   },
 
   actions: {
-    generateContent: async ({ input }): Promise<llm.GenerateContentOutput> => {
+    generateContent: async ({ input, ctx }): Promise<llm.GenerateContentOutput> => {
       try {
-        // Validate the input
-        const validatedInput = GenerateContentInputBaseSchema.safeParse(input);
-    
-        if (!validatedInput.success) {
-          throw new Error('Input validation failed');
-        }
-    
-        console.log("Before generating content", validatedInput);
-    
-        // Extract validated data
-        const { model, messages } = validatedInput.data;
-    
-        // Use optional chaining to safely access content
-        const message = messages?.[0]; // Get the first message
-        let text: string;
-    
-        // Check if the message is defined and has a content property
-        if (message && typeof message.content === 'string') {
-          text = message.content; // Assign the content to text
-        } else {
-          throw new Error('Invalid message content'); // Handle invalid content
-        }
-    
-        // Call listLanguageModels to retrieve available models
-        const availableModels = await listLanguageModels();
-        const currentModel = availableModels.find(m => m.id === model?.id); // Match the model ID
-    
-        // Generate content using the validated input
-        const result = await myLLM.generateText(
-          text,                  // The prompt
-          0,                    // Device number (default to 0 if not available)
-          model?.id || ''       // Model ID
-        );
+          // Extract the endpoint URL from the context
+          const { endpointUrl } = ctx.configuration; // Use the context to get the endpoint URL
+  
+          // Validate the input
+          const validatedInput = GenerateContentInputBaseSchema.safeParse(input);
+          if (!validatedInput.success) {
+              throw new Error('Input validation failed');
+          }
+  
+          const { model, messages } = validatedInput.data;
+          const message = messages?.[0];
+          let text: string;
+  
+          if (message && typeof message.content === 'string') {
+              text = message.content;
+          } else {
+              throw new Error('Invalid message content');
+          }
+  
+          // Call listLanguageModels to retrieve available models
+          const availableModels = await listLanguageModels();
+          const currentModel = availableModels.find(m => m.id === model?.id);
+  
+          // Pass the correct endpoint to the MyLLMClient
+          const myLLM = new MyLLMClient(endpointUrl); // Initialize with the extracted endpoint URL
+  
+          // Generate content using the validated input
+          const result = await myLLM.generateText(text, 0, model?.id || '');
     
         console.log("Generated content result", result);
+        
+        // Calculate token counts (example logic)
+        const inputTokens = text.split(' ').length; // Count of input tokens (rough estimate)
+        const outputTokens = result.split(' ').length; // Count of output tokens
+    
+        // Define cost per token (example values)
+        const costPerInputToken = 0.01; // Example cost per input token
+        const costPerOutputToken = 0.02; // Example cost per output token
+    
+        // Calculate costs
+        const inputCost = inputTokens * costPerInputToken;
+        const outputCost = outputTokens * costPerOutputToken;
+        const totalCost = inputCost + outputCost;
     
         // Construct the output object using the schema
         const output = GenerateContentOutputSchema.parse({
@@ -104,13 +129,13 @@ export default new bp.Integration({
             stopReason: 'stop'         // Adjust as necessary
           }],
           usage: {
-            inputTokens: 0,            // Replace with actual token count
-            inputCost: 0.0,            // Replace with actual input cost
-            outputTokens: 0,           // Replace with actual token count
-            outputCost: 0.0,           // Replace with actual output cost
+            inputTokens: inputTokens,            // Actual token count
+            inputCost: inputCost,                // Actual input cost
+            outputTokens: outputTokens,           // Actual token count
+            outputCost: outputCost,              // Actual output cost
           },
           botpress: {
-            cost: 0.0,                 // Total cost of the content generation
+            cost: totalCost,                     // Total cost of the content generation
           },
         });
     
@@ -123,6 +148,7 @@ export default new bp.Integration({
         }
       }
     },
+    
 
     listLanguageModels: async () => {
       try {
@@ -223,14 +249,14 @@ export default new bp.Integration({
   },
   endpoint: {
       messages: {
-        text: async ({ payload, conversation, ack }) => {
-            const tags = conversation.tags as Partial<Record<'id' | 'mixitupUserId', string>>;
-            const mixitupUserId = tags.mixitupUserId;
+        text: async ({ ctx, payload, conversation, ack }) => {
+          const tags = conversation.tags as Partial<Record<'id' | 'mixitupUserId', string>>;
+          const mixitupUserId = tags.mixitupUserId;
 
             // Call the new sendMessageToEndpoint function
-            await sendMessageToEndpoint(payload.text, 'Twitch', false); // Adjust platform and sendAsStreamer as needed
+            await sendMessageToEndpoint(ctx, payload.text, 'Twitch', false); // Adjust platform and sendAsStreamer as needed
             
-            await ack({ tags: { id: mixitupUserId } }); // You may want to handle message ID differently if needed
+            await ack({ tags: { id: mixitupUserId } }); // Acknowledge the message, handling ID as needed
         },
       },
     },
