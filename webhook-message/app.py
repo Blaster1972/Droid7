@@ -16,6 +16,7 @@ print("Using device:", device)
 # Set environment variables for CUDA debugging
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 os.environ["TORCH_USE_CUDA_DSA"] = "1"
+os.environ["USE_FLASH_ATTENTION"] = "1"
 
 app = Flask(__name__)
 
