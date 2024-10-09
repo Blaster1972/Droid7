@@ -48,8 +48,3 @@ flask_site/
 mixitup-client/
 NeMo/
 ngrok/
-
-# Miscellaneous files
-*.pdb
-*.class
-*.jar

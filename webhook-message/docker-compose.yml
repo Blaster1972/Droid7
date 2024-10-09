@@ -1,0 +1,44 @@
+services:
+  web:
+    build:
+      context: .  # Set the build context to the current directory (where docker-compose.yml is located)
+      dockerfile: Dockerfile  # Explicitly specify the Dockerfile name
+    command: python /app/manage.py runserver 0.0.0.0:8000  # Run the Django development server on all interfaces
+    image: nvidia/cuda:12.6.1-runtime-ubuntu24.04  # Use specific CUDA image
+    ports:
+      - "8000:8000"  # Map port 8000 on the host to port 8000 on the container
+    volumes:
+      - ./droid7:/app  # Mount the droid7 directory to /app in the container
+    environment:
+      - PYTHONUNBUFFERED=1  # Ensure output is sent straight to terminal for easier debugging
+      - DB_HOST=db  # Database host
+      - DB_PORT=3306  # Database port
+      - DB_NAME=droid7  # Database name
+      - DB_USER=blaster  # Database user
+      - DB_PASSWORD=obiwan  # Database password
+      - NVIDIA_VISIBLE_DEVICES=all  # Allow all GPUs
+      - CUDA_VISIBLE_DEVICES=0  # Specify which GPU to use
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia  # Use the NVIDIA driver
+              count: all  # Allow all available GPUs
+              capabilities: [gpu]  # Specify that GPU capabilities are required
+    runtime: nvidia  # Ensure NVIDIA runtime is used
+
+  db:
+    image: mysql:latest  # Use the latest MySQL image
+    restart: always  # Restart policy for the database
+    environment:
+      MYSQL_ROOT_PASSWORD: droid  # Set the MySQL root password
+      MYSQL_DATABASE: droid7  # Create a database named droid7
+      MYSQL_USER: blaster  # Create a user named blaster
+      MYSQL_PASSWORD: obiwan  # Set the password for the user
+    ports:
+      - "3307:3306"  # Map port 3307 on the host to port 3306 on the container
+    volumes:
+      - db_data:/var/lib/mysql  # Persist MySQL data
+
+volumes:
+  db_data:  # Define a named volume for MySQL data
