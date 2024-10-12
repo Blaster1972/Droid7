@@ -14,8 +14,8 @@ dist/
 *.log
 
 # Python virtual environments
-.venv/
-droid7/venv/
+#.venv/
+#droid7/venv/
 
 # Python cache files
 *.pyc
@@ -48,3 +48,4 @@ flask_site/
 mixitup-client/
 NeMo/
 ngrok/
+mod_wsgi-5.0.1/

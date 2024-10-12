@@ -53,3 +53,5 @@ ngrok/
 *.pdb
 *.class
 *.jar
+
+mod_wsgi-5.0.1/
