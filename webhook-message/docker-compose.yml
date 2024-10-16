@@ -1,15 +1,53 @@
 services:
   web:
     build:
-      context: .  # Set the build context to the current directory (where docker-compose.yml is located)
+      context: .  # Set the build context to the current directory
       dockerfile: Dockerfile  # Explicitly specify the Dockerfile name
+    command: >
+      sh -c "./wait-for-db.sh "
     image: nvidia/cuda:12.6.1-runtime-ubuntu24.04  # Use specific CUDA image
     ports:
-      - "8000:8000"  # Map port 8000 on the host to port 8000 on the container
+      #- "8000:8000"  # Django server
+      - "8443:8443"  # HTTPS
     volumes:
-      - ./droid7:/app/droid7  # Mount the droid7 directory to /app/droid7 in the container
+      - ./droid7:/app/droid7  # Mount the droid7 directory
+      - ./wait-for-db.sh:/app/wait-for-db.sh  # Mount the wait-for-db.sh script
+      - ./certs:/app/certs
     environment:
-      - PYTHONUNBUFFERED=1  # Ensure output is sent straight to terminal for easier debugging
+      - PYTHONUNBUFFERED=1  # Ensure output is sent straight to terminal
+      - DB_HOST=db  # Database host
+      - DB_PORT=3306  # Database port
+      - DB_NAME=droid7  # Database name
+      - DB_USER=blaster  # Database user
+      - DB_PASSWORD=obiwan  # Database password
+      - NVIDIA_VISIBLE_DEVICES=all  # Allow all GPUs
+      - CUDA_VISIBLE_DEVICES=0  # Specify which GPU to use
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia  # Use the NVIDIA driver
+              count: all  # Allow all available GPUs
+              capabilities: [gpu]  # Specify that GPU capabilities are required
+    runtime: nvidia  # Ensure NVIDIA runtime is used
+
+  flask:
+    build:
+      context: .  # Set the build context to the current directory
+      dockerfile: Dockerfile  # Explicitly specify the Dockerfile name
+    command: >
+      sh -c "/app/.venv/bin/python /app/app.py"  # Start the Flask app
+    image: nvidia/cuda:12.6.1-runtime-ubuntu24.04  # Use specific CUDA image
+    ports:
+      - "5000:5000"  # Flask server
+      #- "5443:5443"  # HTTPS
+    volumes:
+      - ./droid7:/app/droid7  # Mount the droid7 directory
+      - ./models:/app/models  # Mount the models directory
+      - ./certs:/app/certs
+
+    environment:
+      - PYTHONUNBUFFERED=1  # Ensure output is sent straight to terminal
       - DB_HOST=db  # Database host
       - DB_PORT=3306  # Database port
       - DB_NAME=droid7  # Database name
@@ -35,9 +73,10 @@ services:
       MYSQL_USER: blaster  # Create a user named blaster
       MYSQL_PASSWORD: obiwan  # Set the password for the user
     ports:
-      - "3307:3306"  # Map port 3307 on the host to port 3306 on the container
+      - "3307:3306"  # Map host port to MySQL container port
     volumes:
       - db_data:/var/lib/mysql  # Persist MySQL data
+      #- C:/wamp64/bin/mysql/mysql8.3.0/my.ini:/etc/mysql/my.ini
 
 volumes:
   db_data:  # Define a named volume for MySQL data

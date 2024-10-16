@@ -1,5 +1,10 @@
 FROM nvidia/cuda:12.6.1-runtime-ubuntu24.04
 
+# Install netcat (openbsd variant)
+RUN apt-get update && \
+    apt-get install -y netcat-openbsd && \
+    apt-get clean
+
 # Set non-interactive mode for apt-get
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -33,19 +38,22 @@ WORKDIR /app
 # Copy the requirements file and application code
 COPY requirements.txt .  
 COPY droid7 /app/droid7  
+COPY certs /app/certs
+
+COPY app.py .  
 
 # Set up the virtual environment
 RUN python3 -m venv .venv && ls -l /app/.venv/bin/
-
-RUN ls -l /app/.venv/bin/  # To verify contents again
 
 # Upgrade pip and install dependencies
 RUN ./.venv/bin/pip install --upgrade pip setuptools wheel && \
     ./.venv/bin/pip install --no-cache-dir -r requirements.txt && \
     ./.venv/bin/pip list
 
-# Expose the application port
-EXPOSE 8000
+# Expose the application ports
+#EXPOSE 8000  
+#EXPOSE 5000  
 
-# Start the Django server
-CMD ["/app/.venv/bin/python", "/app/droid7/manage.py", "runserver", "0.0.0.0:8000"]
+# Use a shell command to start both applications
+#CMD ["sh", "-c", "/app/.venv/bin/python /app/droid7/manage.py runserver 0.0.0.0:8443 & /app/.venv/bin/python /app/app.py"]
+#CMD ["/app/.venv/bin/python /app/droid7/manage.py runserver 0.0.0.0:8443 & /app/.venv/bin/python /app/app.py"]

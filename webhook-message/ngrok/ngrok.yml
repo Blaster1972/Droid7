@@ -2,7 +2,7 @@ version: "2"
 authtoken: 2lZqQ2fWGj4fG3QhSPPmXL50Vi8_4qsMddmRK776E4oaDFF2f
 tunnels:
    mixitup:
-     addr: 80  # Point to local Apache server port
+     addr: 443  # Point to local Apache server port
      proto: http
      hostname: duckling-mighty-rhino.ngrok-free.app  # Custom ngrok subdomain
    # spare:

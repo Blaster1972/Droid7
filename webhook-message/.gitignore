@@ -55,3 +55,7 @@ ngrok/
 *.jar
 
 mod_wsgi-5.0.1/
+
+*.pfx
+*.crt
+*.key

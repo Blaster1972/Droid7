@@ -4,6 +4,11 @@ import torch
 import os
 import logging
 
+# Determine base model path based on OS
+model_base_path = "C:\\wamp64\\www\\Droid7\\webhook-message\\models" if os.name == "nt" else "/app/models"
+#model_base_path = "\\app\\models"
+logging.info(f"Model base path: {model_base_path}")
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 print(torch.cuda.is_available())
@@ -25,9 +30,10 @@ model = None
 tokenizer = None
 
 def load_model(model_info):
-    global device  # Use the global device variable
+    global device
     try:
-        path = model_info['description']['url']  # Access the model URL directly
+        # Normalize the model path for compatibility
+        path = os.path.normpath(model_info['description']['url'])  # Normalize path
         params = model_info['description'].get('params', {})
         
         torch_dtype = torch.float32
@@ -36,7 +42,7 @@ def load_model(model_info):
             torch_dtype = getattr(torch, dtype_str, torch.float32)
 
         logging.info(f"Loading model from {path}.")  
-        
+
         # Load models based on path
         if 'distilbert' in path.lower():
             model = DistilBertForSequenceClassification.from_pretrained(path).to(device)
@@ -53,7 +59,8 @@ def load_model(model_info):
 
     except Exception as e:
         logging.error(f"Failed to load model {model_info['description']['url']}: {str(e)}")
-        return None, None  # Ensure this returns None for both values
+        return None, None
+
 
 def classify_text(input_text, model_info):  # Removed device parameter
     logging.info(f"Classifying text with model: {model_info['description']['url']}")
@@ -134,7 +141,8 @@ def process_content():
     # First classify the text using DistilBERT
     sentiment_model_info = {
         "description": {
-            "url": "C:\\wamp64\\www\\Droid7\\webhook-message\\models\\distilbert-base-uncased-finetuned-sst-2-english",
+            "url": f"{model_base_path}\\distilbert-base-uncased-finetuned-sst-2-english",
+            #"url": os.path.join(model_base_path, "distilbert-base-uncased-finetuned-sst-2-english"),
             "params": {
                 "torch_dtype": "float16",
                 "temperature": 5,
@@ -158,7 +166,8 @@ def process_content():
     if predicted_class == 1:  # Assuming 1 means positive sentiment
         response_model_info = {
             "description": {
-                "url": "C:\\wamp64\\www\\Droid7\\webhook-message\\models\\DialoGPT-medium",
+                #"url": os.path.join(model_base_path, "DialoGPT-medium"),
+                "url": f"{model_base_path}\\DialoGPT-medium",
                 "params": {
                     "torch_dtype": "float16",
                     "temperature": 5,
@@ -174,12 +183,13 @@ def process_content():
     else:  # For negative or neutral sentiment
         response_model_info = {
             "description": {
-                "url": "C:\\wamp64\\www\\Droid7\\webhook-message\\models\\gpt2",
+                #"url": os.path.join(model_base_path, "gpt2"),
+                "url": f"{model_base_path}\\gpt2",
                 "params": {
                     "torch_dtype": "float16",
                     "temperature": 0.8,
-                    "max_length": 1024,
-                    "top_k": 30,
+                    "max_length": 100,
+                    "top_k": 50,
                     "top_p": 0.85
                 }
             }
@@ -219,4 +229,19 @@ def generate_content():
         return jsonify({'error': f'Internal Server Error: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    #app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(
+        debug=True,
+        host='0.0.0.0',
+        port=5000 #,   Change to your desired HTTPS port
+        #ssl_context=('certs/server.crt', 'certs/key.pem')  # Path to your certificate and key files
+        #ssl_context=('/app/certs/server.crt', '/app/certs/server-key.pem')
+        #ssl_context=('C:/wamp64/www/droid7/webhook-message/certs/blaster.ddns.net/fullchain.pem', 
+        #             'C:/wamp64/www/droid7/webhook-message/certs/blaster.ddns.net/privkey.pem')
+        #ssl_context=('/app/certs/blaster.ddns.net/certificate.crt', 
+        #             '/app/certs/blaster.ddns.net/private.key')  
+        #ssl_context=(
+        #    'C:/wamp64/www/droid7/webhook-message/certs/blaster.ddns.net/certificate.crt',
+        #    'C:/wamp64/www/droid7/webhook-message/certs/blaster.ddns.net/private.key'
+        #)
+    )
