@@ -4,12 +4,19 @@ import torch
 import os
 import logging
 
+#logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()  # This will send logs to STDERR
+    ]
+)
+
 # Determine base model path based on OS
 model_base_path = "C:\\wamp64\\www\\Droid7\\webhook-message\\models" if os.name == "nt" else "/app/models"
 #model_base_path = "\\app\\models"
 logging.info(f"Model base path: {model_base_path}")
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 print(torch.cuda.is_available())
 print(torch.__version__)
@@ -25,6 +32,9 @@ os.environ["USE_FLASH_ATTENTION"] = "1"
 
 app = Flask(__name__)
 
+# Global cache for loaded models and tokenizers
+model_cache = {}
+
 # Global variables to hold the model and tokenizer
 model = None
 tokenizer = None
@@ -35,13 +45,18 @@ def load_model(model_info):
         # Normalize the model path for compatibility
         path = os.path.normpath(model_info['description']['url'])  # Normalize path
         params = model_info['description'].get('params', {})
-        
+
+        # Check cache first
+        if path in model_cache:
+            logging.info(f"Model '{path}' found in cache.")
+            return model_cache[path]  # Return cached model and tokenizer
+
         torch_dtype = torch.float32
         if 'torch_dtype' in params:
             dtype_str = params['torch_dtype']
             torch_dtype = getattr(torch, dtype_str, torch.float32)
 
-        logging.info(f"Loading model from {path}.")  
+        logging.info(f"Loading model from {path}.")
 
         # Load models based on path
         if 'distilbert' in path.lower():
@@ -55,6 +70,10 @@ def load_model(model_info):
             tokenizer = AutoTokenizer.from_pretrained(path)
 
         logging.info(f"Model '{path}' loaded successfully on device: {device}.")
+        
+        # Cache the model and tokenizer
+        model_cache[path] = (model, tokenizer)
+        
         return model, tokenizer
 
     except Exception as e:
@@ -209,6 +228,7 @@ def process_content():
 
 @app.route('/generate', methods=['POST'])
 def generate_content():
+    logging.info("generating content...")
     try:
         # Extract input data from request
         data = request.json
@@ -222,6 +242,8 @@ def generate_content():
         # Generate text using the specified model
         generated_text, _ = generate_text(data['text'], model_info)  # Removed device parameter
 
+        logging.info(f"generated_text: {generated_text}")
+        #logging.info("generated_text:\n" + "-" * 50 + "\n" + generated_text + "\n" + "-" * 50)
         return jsonify({'generated_text': generated_text}), 200
 
     except Exception as e:
@@ -231,6 +253,7 @@ def generate_content():
 if __name__ == '__main__':
     app.run(
         debug=True,
+        use_reloader=False,
         host='0.0.0.0',
         port=5000
     )
