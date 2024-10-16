@@ -1,0 +1,50 @@
+#FROM nvidia/cuda:12.6.1-runtime-ubuntu24.04
+FROM python:3.12-slim
+
+# Install netcat (openbsd variant)
+RUN apt-get update && \
+    apt-get install -y netcat-openbsd && \
+    apt-get clean
+
+# Set non-interactive mode for apt-get
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONPATH="/app"
+
+# Update and install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    python3 \
+    python3-pip \
+    python3-venv \
+    git \
+    python3-dev \
+    default-libmysqlclient-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create symbolic link for Python
+RUN ln -s /usr/bin/python3 /usr/bin/python || echo "Symbolic link for python already exists."
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the requirements file and application code from the parent directory
+COPY droid7/requirements.txt ./  
+
+# Set up the virtual environment
+RUN python3 -m venv .venv && ls -l /app/.venv/bin/
+
+# Upgrade pip and install dependencies
+RUN ./.venv/bin/pip install --upgrade pip setuptools wheel && \
+    ./.venv/bin/pip install --no-cache-dir -r requirements.txt && \
+    ./.venv/bin/pip list
+
+# Expose the application ports
+#EXPOSE 8000  
+#EXPOSE 5000  
+
+# Command to start the Flask application
+#CMD ["sh", "-c", "/app/.venv/bin/python /app/app.py"]

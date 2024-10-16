@@ -36,11 +36,12 @@ RUN ln -s /usr/bin/python3 /usr/bin/python || echo "Symbolic link for python alr
 WORKDIR /app
 
 # Copy the requirements file and application code
-COPY requirements.txt .  
-COPY droid7 /app/droid7  
+COPY flask/requirements.txt /app/ 
+COPY flask/app.py /app/
+#COPY droid7 /app/droid7  
 #COPY certs /app/certs
 
-COPY app.py .  
+#COPY app.py .  
 
 # Set up the virtual environment
 RUN python3 -m venv .venv && ls -l /app/.venv/bin/

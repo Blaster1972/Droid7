@@ -1,0 +1,7 @@
+nvidia-cuda-runtime-cu12
+Django==5.1.2
+djangorestframework
+django-cms
+django-filer
+mysqlclient
+

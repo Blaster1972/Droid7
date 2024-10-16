@@ -1,13 +1,8 @@
 nvidia-cuda-runtime-cu12
 tokenizers==0.20.0  # Use a compatible version
-Django==5.1.2
-djangorestframework
-django-cms
-django-filer
 Flask==3.0.3
 transformers==4.45.2
 torch==2.4.1
 torchvision
 torchaudio
 mysqlclient
-

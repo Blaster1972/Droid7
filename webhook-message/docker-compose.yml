@@ -2,17 +2,18 @@ services:
   web:
     build:
       context: .  # Set the build context to the current directory
-      dockerfile: Dockerfile  # Explicitly specify the Dockerfile name
+      dockerfile: /droid7/Dockerfile.web  # Explicitly specify the Dockerfile name
     command: >
-      sh -c "./wait-for-db.sh "
-    image: nvidia/cuda:12.6.1-runtime-ubuntu24.04  # Use specific CUDA image
+      sh -c "./wait-for-db.sh "      
+    #image: nvidia/cuda:12.6.1-runtime-ubuntu24.04  # Use specific CUDA image
     ports:
       #- "8000:8000"  # Django server
       - "8443:8443"  # HTTPS
     volumes:
       - ./droid7:/app/droid7  # Mount the droid7 directory
+      #- ./droid7/requirements.txt:/app/droid7
       - ./wait-for-db.sh:/app/wait-for-db.sh  # Mount the wait-for-db.sh script
-      - ./certs:/app/certs
+      #- ./certs:/app/certs
     environment:
       - PYTHONUNBUFFERED=1  # Ensure output is sent straight to terminal
       - DB_HOST=db  # Database host
@@ -21,7 +22,7 @@ services:
       - DB_USER=blaster  # Database user
       - DB_PASSWORD=obiwan  # Database password
       - NVIDIA_VISIBLE_DEVICES=all  # Allow all GPUs
-      - CUDA_VISIBLE_DEVICES=0  # Specify which GPU to use
+      #- CUDA_VISIBLE_DEVICES=0  # Specify which GPU to use
     deploy:
       resources:
         reservations:
@@ -34,15 +35,17 @@ services:
   flask:
     build:
       context: .  # Set the build context to the current directory
-      dockerfile: Dockerfile  # Explicitly specify the Dockerfile name
+      dockerfile: /flask/Dockerfile.flask  # Explicitly specify the Dockerfile name
     command: >
-      sh -c "/app/.venv/bin/python /app/app.py"  # Start the Flask app
-    image: nvidia/cuda:12.6.1-runtime-ubuntu24.04  # Use specific CUDA image
+      sh -c "/app/.venv/bin/python /app/app.py"  
+    #image: nvidia/cuda:12.6.1-runtime-ubuntu24.04  # Use specific CUDA image
     ports:
       - "5000:5000"  # Flask server
       #- "5443:5443"  # HTTPS
     volumes:
-      - ./droid7:/app/droid7  # Mount the droid7 directory
+      #- ./droid7:/app/droid7  # Mount the droid7 directory
+      - ./droid7/app.py:/app/droid7  # Mount the droid7 directory
+      #- ./droid7/requirements.txt:/app/droid7  # Mount the droid7 directory
       - ./models:/app/models  # Mount the models directory
       #- ./certs:/app/certs
 
@@ -54,7 +57,7 @@ services:
       - DB_USER=blaster  # Database user
       - DB_PASSWORD=obiwan  # Database password
       - NVIDIA_VISIBLE_DEVICES=all  # Allow all GPUs
-      - CUDA_VISIBLE_DEVICES=0  # Specify which GPU to use
+      #- CUDA_VISIBLE_DEVICES=0  # Specify which GPU to use
     deploy:
       resources:
         reservations:
