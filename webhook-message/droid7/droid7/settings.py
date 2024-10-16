@@ -28,7 +28,20 @@ SECRET_KEY = 'django-insecure-=z*zle6ntfo$!ws22nd-cs(n@g6u((tava#0qt!2h+nz730%u=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.2.31', 'droid7.ddns.net']
+ALLOWED_HOSTS = [
+    'localhost', 
+    '127.0.0.1', 
+    '192.168.2.31', 
+    'https://droid7.ddns.net'
+    'https://blaster.ddns.net',
+    'https://mixitup-endpoint.ddns.net',
+    ]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://droid7.ddns.net',
+    'https://blaster.ddns.net',
+    'https://mixitup-endpoint.ddns.net',
+]
 
 
 # Application definition

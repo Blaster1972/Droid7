@@ -44,7 +44,7 @@ services:
     volumes:
       - ./droid7:/app/droid7  # Mount the droid7 directory
       - ./models:/app/models  # Mount the models directory
-      - ./certs:/app/certs
+      #- ./certs:/app/certs
 
     environment:
       - PYTHONUNBUFFERED=1  # Ensure output is sent straight to terminal

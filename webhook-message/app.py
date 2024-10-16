@@ -188,7 +188,7 @@ def process_content():
                 "params": {
                     "torch_dtype": "float16",
                     "temperature": 0.8,
-                    "max_length": 100,
+                    "max_length": 128,
                     "top_k": 50,
                     "top_p": 0.85
                 }
@@ -229,19 +229,8 @@ def generate_content():
         return jsonify({'error': f'Internal Server Error: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    #app.run(debug=True, host='0.0.0.0', port=5000)
     app.run(
         debug=True,
         host='0.0.0.0',
-        port=5000 #,   Change to your desired HTTPS port
-        #ssl_context=('certs/server.crt', 'certs/key.pem')  # Path to your certificate and key files
-        #ssl_context=('/app/certs/server.crt', '/app/certs/server-key.pem')
-        #ssl_context=('C:/wamp64/www/droid7/webhook-message/certs/blaster.ddns.net/fullchain.pem', 
-        #             'C:/wamp64/www/droid7/webhook-message/certs/blaster.ddns.net/privkey.pem')
-        #ssl_context=('/app/certs/blaster.ddns.net/certificate.crt', 
-        #             '/app/certs/blaster.ddns.net/private.key')  
-        #ssl_context=(
-        #    'C:/wamp64/www/droid7/webhook-message/certs/blaster.ddns.net/certificate.crt',
-        #    'C:/wamp64/www/droid7/webhook-message/certs/blaster.ddns.net/private.key'
-        #)
+        port=5000
     )

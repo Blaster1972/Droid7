@@ -38,7 +38,7 @@ WORKDIR /app
 # Copy the requirements file and application code
 COPY requirements.txt .  
 COPY droid7 /app/droid7  
-COPY certs /app/certs
+#COPY certs /app/certs
 
 COPY app.py .  
 
